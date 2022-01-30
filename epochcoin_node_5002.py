@@ -13,7 +13,7 @@ class Blockchain:
 
     def __init__(self):
         self.chain = []
-        self.trasactions = []
+        self.transactions = []
         self.create_block(proof = 1, previous_hash = '0')
         self.nodes = set()
     
@@ -70,18 +70,18 @@ class Blockchain:
 
     def add_node(self, address):
         parsed_url = urlparse(address)
-        self.nodes.add(parsed_url.netlock)
+        self.nodes.add(parsed_url.netloc)
     
     def replace_chain(self):
         network = self.nodes
         longest_chain = None
         max_length = len(self.chain)
         for node in network:
-            response = request.get('http://{node}/get_chain')
+            response = requests.get(f'http://{node}/get_chain')
             if response.status_code == 200:
                 length = response.json()['length']
                 chain = response.json()['chain']
-                if length > max_length and self.is_chain_valid(chain):
+                if int(length) > max_length and self.is_chain_valid(chain):
                     max_length = length
                     longest_chain = chain
         if longest_chain:
@@ -124,7 +124,6 @@ def mine_block():
 def get_chain():
     response = {'chain': blockchain.chain,
                 'length': str(len(blockchain.chain))}
-    print(response)
     return jsonify(response), 200
 
 # Checking if the Blockchain is valid
@@ -141,9 +140,9 @@ def is_valid():
 # Adding a new transaction to the Blockchain
 @app.route('/add_transaction', methods=['POST'])
 def add_transaction():
-    json = request.get_json()
+    json = request.get_json(force=True, silent=True, cache=False)
     transaction_keys = ['sender', 'receiver', 'amount']
-    if not all(key in json for key in transaction_keys)
+    if not all(key in json for key in transaction_keys):
         return 'Some elements of the transaction are missing', 400
     index = blockchain.add_transaction(json['sender'], json['receiver'], json['amount'])
     response = {
@@ -153,8 +152,8 @@ def add_transaction():
 
 # Connecting new nodes
 @app.route('/connect_node', methods=['POST'])
-def connect_node()
-    json = request.get_json()
+def connect_node():
+    json = request.get_json(force=True, silent=True, cache=False)
     nodes = json.get('nodes')
     if nodes is None:
         return "No node", 400
